@@ -1,19 +1,13 @@
 const express = require('express');
-const axios = require('axios');
-const jsdom = require('jsdom');
-const { JSDOM } = jsdom;
+const puppeteer = require('puppeteer');
 
 const app = express();
 
 app.get('/', async (req, res) => {
     try {
-        const response = await axios.get('https://www.linkedin.com/posts/alpine-laser_just-completed-the-installation-of-two-femtosecond-activity-7084633761740423169-tC06', {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36',
-            }
-        });
-
-        const dom = new JSDOM(response.data);
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.goto('https://www.linkedin.com/posts/alpine-laser_just-completed-the-installation-of-two-femtosecond-activity-7084633761740423169-tC06');
 
         const selectors = {
             "image_selector": '#main-content > section.core-rail.mx-auto.papabear\:w-core-rail-width.mamabear\:max-w-\[790px\].babybear\:max-w-\[790px\] > div > section.mb-3 > article > ul > li > img',
@@ -25,9 +19,11 @@ app.get('/', async (req, res) => {
         const results = {};
 
         for (const name in selectors) {
-            const elements = dom.window.document.querySelectorAll(selectors[name]);
-            results[name] = Array.from(elements).map(item => item.tagName === 'IMG' ? item.src : item.textContent.trim());
+            const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.innerText));
+            results[name] = elements;
         }
+
+        await browser.close();
 
         res.json(results);
     } catch (error) {
