@@ -8,6 +8,10 @@ app.get('/', async (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
         await page.goto('https://www.linkedin.com/posts/alpine-laser_just-completed-the-installation-of-two-femtosecond-activity-7084633761740423169-tC06');
+        // Scroll down the page
+        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
+        // Sleep for one second
+        await page.waitForTimeout(1000);
 
         const selectors = {
             "image_selector": '#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > ul > li > img',
