@@ -3,11 +3,18 @@ const puppeteer = require('puppeteer');
 
 const app = express();
 
-app.get('/', async (req, res) => {
+app.post('/', express.json(), async (req, res) => {
+    const { url, secretKey } = req.body;
+    const correctSecretKey = 'PzoiJcU2ocfOeWj6AQQdkQ';
+
+    if (secretKey !== correctSecretKey) {
+        return res.status(403).json({ error: 'Invalid secret key.' });
+    }
+
     try {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
-        await page.goto('https://www.linkedin.com/posts/alpine-laser_just-completed-the-installation-of-two-femtosecond-activity-7084633761740423169-tC06');
+        await page.goto(url);
         // Scroll down the page
         await page.evaluate(() => window.scrollBy(0, window.innerHeight));
         // Sleep for one second
