@@ -23,8 +23,13 @@ app.get('/', async (req, res) => {
         const results = {};
 
         for (const name in selectors) {
-            const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.innerText));
-            results[name] = elements;
+            if (name === 'image_selector') {
+                const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.src));
+                results[name] = elements;
+            } else {
+                const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.innerText));
+                results[name] = elements;
+            }
         }
 
         await browser.close();
