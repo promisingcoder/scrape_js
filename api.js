@@ -28,7 +28,7 @@ app.post('/', express.json(), async (req, res) => {
             "new_selector_1": "#main-content > section.core-rail.mx-auto.papabear\:w-core-rail-width.mamabear\:max-w-\[790px\].babybear\:max-w-\[790px\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > a > img",
             "new_selector_2": "#main-content > section.core-rail.mx-auto.papabear\:w-core-rail-width.mamabear\:max-w-\[790px\].babybear\:max-w-\[790px\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > div > span > time",
             "new_selector_3": "#ember23 > div.scaffold-layout.scaffold-layout--breakpoint-none.scaffold-layout--sidebar-main-aside.scaffold-layout--single-column.scaffold-layout--reflow > div > div > div > div > div > div > div > div.link-without-hover-visited > p > span:nth-child(1) > span"
-
+        }
         const results = {};
 
         for (const name in selectors) {
