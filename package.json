@@ -7,9 +7,9 @@
     "start": "node api.js"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "puppeteer": "^10.4.0",
     "axios": "^0.21.4",
-    "jsdom": "^16.7.0"
+    "express": "^4.17.1",
+    "jsdom": "^16.7.0",
+    "puppeteer": "^21.0.3"
   }
 }
