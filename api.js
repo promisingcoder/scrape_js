@@ -4,50 +4,69 @@ const puppeteer = require('puppeteer');
 const app = express();
 
 app.post('/', express.json(), async (req, res) => {
+
     const { url, secretKey } = req.body;
+
     const correctSecretKey = 'PzoiJcU2ocfOeWj6AQQdkQ';
 
     if (secretKey !== correctSecretKey) {
-        return res.status(403).json({ error: 'Invalid secret key.' });
+        return res.status(403).json({ error: 'Invalid secret key' });
     }
 
     try {
+
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
-        await page.goto(url);
-        // Scroll down the page
-        await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-        // Sleep for one second
-        await page.waitForTimeout(1000);
+        await page.goto(url, { timeout: 60000 });
+        setTimeout(() => {
+            console.log("Delayed for 2 second.");
+          }, 2000);
+        await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+          });
+        // Scroll and wait before scraping
+        await page.evaluate(() => {
+            window.scrollBy(0, window.innerHeight);
+        });
 
-        const selectors = {
-            "image_selector": '#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > ul > li > img',
-            "post_selector": '#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.attributed-text-segment-list__container.relative.mt-1.mb-1\\.5.babybear\\:mt-0.babybear\\:mb-0\\.5 > p',
-            "number_of_comments_selector": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.text-sm.babybear\\:text-xs.main-feed-activity-card__social-actions > a.flex.items-center.font-normal.text-color-text-low-emphasis.no-underline.visited\\:text-color-text-low-emphasis.before\\:middot.my-1",
-            "number_of_reactions": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.text-sm.babybear\\:text-xs.main-feed-activity-card__social-actions > a:nth-child(1) > span",
-            "new_selector_1": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > a > img",
-            "new_selector_2": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > div > span > time",
-            "new_selector_3": "#ember23 > div.scaffold-layout.scaffold-layout--breakpoint-none.scaffold-layout--sidebar-main-aside.scaffold-layout--single-column.scaffold-layout--reflow > div > div > div > div > div > div > div > div.link-without-hover-visited > p > span:nth-child(1) > span"
-        }
-        const results = {};
+        const result = {};
 
-        for (const name in selectors) {
-            if (name === 'image_selector') {
-                const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.src));
-                results[name] = elements;
-            } else {
-                const elements = await page.$$eval(selectors[name], nodes => nodes.map(n => n.innerText));
-                results[name] = elements;
-            }
-        }
+        const idElement = await page.$('link[rel="canonical"]');
+        result.id = idElement ? await page.evaluate(el => el.href.split('/').pop(), idElement) : 'Element not found';
+        const authorScriptElement = await page.$('script[type="application/ld+json"]');
+        const authorScriptContent = authorScriptElement ? await page.evaluate(el => JSON.parse(el.textContent), authorScriptElement) : null;
+        result.author = authorScriptContent ? authorScriptContent.author.name : 'Element not found';
+        result.username = authorScriptContent ? authorScriptContent.author.url.split('/').pop() : 'Element not found';
+        result.age = await page.$eval('time', el => el.textContent.replace(/\s/g, ''));
+        result.profilePicture = authorScriptContent ? authorScriptContent.author.image.url : 'Element not found';
+        result.copy = await page.$eval('.attributed-text-segment-list__content', el => {
+            let text = el.textContent;
+            text = text.replace(/\s\s+/g, ' '); // remove line breaks and spaces
+            text = text.replace(/<[^>]*>?/gm, ''); // remove HTML tags and their content
+            return text;
+        });
+
+        result.images = await page.$$eval('.feed-images-content img', imgs => {
+            return imgs.map(img => img.src)
+        });
+
+        const reactionsElement = await page.$('span[data-test-id="social-actions__reaction-count"]');
+        const reactions = reactionsElement ? await page.evaluate(el => parseInt(el.textContent.trim(), 10), reactionsElement) : 'Element not found';
+        result.reactions = reactions;
+
+        const commentsElement = await page.$('a[data-test-id="social-actions__comments"]');
+        const comments = commentsElement ? await page.evaluate(el => parseInt(el.getAttribute('data-num-comments'), 10), commentsElement) : 'Element not found';
+        result.comments = comments;
 
         await browser.close();
 
-        res.json(results);
+        res.json(result);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred.', details: error.message });
     }
 });
+
+//app.listen(3000);
 
 app.listen(process.env.PORT || 3000, () => {
     console.log('Server is running on port 3000');
