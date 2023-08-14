@@ -25,10 +25,9 @@ app.post('/', express.json(), async (req, res) => {
             "post_selector": '#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.attributed-text-segment-list__container.relative.mt-1.mb-1\\.5.babybear\\:mt-0.babybear\\:mb-0\\.5 > p',
             "number_of_comments_selector": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.text-sm.babybear\\:text-xs.main-feed-activity-card__social-actions > a.flex.items-center.font-normal.text-color-text-low-emphasis.no-underline.visited\\:text-color-text-low-emphasis.before\\:middot.my-1",
             "number_of_reactions": "#main-content > section.core-rail.mx-auto.papabear\\:w-core-rail-width.mamabear\\:max-w-\\[790px\\].babybear\\:max-w-\\[790px\\] > div > section.mb-3 > article > div.flex.items-center.font-sans.text-sm.babybear\\:text-xs.main-feed-activity-card__social-actions > a:nth-child(1) > span",
-            "new_selector_1": "html > body > div:nth-child(5) > div:nth-child(3) > div > div > div:nth-child(2) > div > div > div > div > div > div > a:nth-child(1) > div > div > img",
-            "new_selector_2": "html > body > div:nth-child(5) > div:nth-child(3) > div > div > div:nth-child(2) > div > div > main > div > section > div > div > div:nth-child(2) > a > div:nth-child(3) > span:nth-child(3) > div > span > span:nth-child(1)",
-            "new_selector_3": "html > body > div:nth-child(5) > div:nth-child(3) > div > div > div:nth-child(2) > div > div > div > div > div > div > div > div:nth-child(2) > p > span:nth-child(1) > span"
-        };
+            "new_selector_1": "#main-content > section.core-rail.mx-auto.papabear\:w-core-rail-width.mamabear\:max-w-\[790px\].babybear\:max-w-\[790px\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > a > img",
+            "new_selector_2": "#main-content > section.core-rail.mx-auto.papabear\:w-core-rail-width.mamabear\:max-w-\[790px\].babybear\:max-w-\[790px\] > div > section.mb-3 > article > div.flex.items-center.font-sans.mb-1 > div > span > time",
+            "new_selector_3": "#ember23 > div.scaffold-layout.scaffold-layout--breakpoint-none.scaffold-layout--sidebar-main-aside.scaffold-layout--single-column.scaffold-layout--reflow > div > div > div > div > div > div > div > div.link-without-hover-visited > p > span:nth-child(1) > span"
 
         const results = {};
 
