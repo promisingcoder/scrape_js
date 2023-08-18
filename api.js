@@ -3,8 +3,28 @@ const puppeteer = require('puppeteer');
 const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
-app.use(cors({ origin: '*' }));
+app.use((req, res, next) => {
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    "https://scrape-js.onrender.com/"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS,CONNECT,TRACE"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Content-Type-Options, Accept, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+  );
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Private-Network", true);
+  //  Firefox caps this at 24 hours (86400 seconds). Chromium (starting in v76) caps at 2 hours (7200 seconds). The default value is 5 seconds.
+  res.setHeader("Access-Control-Max-Age", 7200);
+
+  next();
+});
 
 app.post('/', express.json(), async (req, res) => {
 
@@ -23,10 +43,10 @@ app.post('/', express.json(), async (req, res) => {
         await page.goto(url, { timeout: 60000 });
         setTimeout(() => {
             console.log("Delayed for 2 second.");
-        }, 2000);
+          }, 2000);
         await page.evaluate(() => {
             window.scrollTo(0, document.body.scrollHeight);
-        });
+          });
         // Scroll and wait before scraping
         await page.evaluate(() => {
             window.scrollBy(0, window.innerHeight);
@@ -35,7 +55,7 @@ app.post('/', express.json(), async (req, res) => {
         const result = {};
 
         const idElement = await page.$('link[rel="canonical"]');
-        result.url = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
+        result.id = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
         const authorScriptElement = await page.$('script[type="application/ld+json"]');
         const authorScriptContent = authorScriptElement ? await page.evaluate(el => JSON.parse(el.textContent), authorScriptElement) : null;
         result.author = authorScriptContent ? authorScriptContent.author.name : 'Element not found';
