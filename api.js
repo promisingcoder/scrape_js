@@ -1,7 +1,9 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
 app.post('/', express.json(), async (req, res) => {
 
@@ -32,7 +34,7 @@ app.post('/', express.json(), async (req, res) => {
         const result = {};
 
         const idElement = await page.$('link[rel="canonical"]');
-        result.url = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
+        result.id = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
         const authorScriptElement = await page.$('script[type="application/ld+json"]');
         const authorScriptContent = authorScriptElement ? await page.evaluate(el => JSON.parse(el.textContent), authorScriptElement) : null;
         result.author = authorScriptContent ? authorScriptContent.author.name : 'Element not found';
