@@ -3,7 +3,8 @@ const puppeteer = require('puppeteer');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+
+app.use(cors({ origin: '*' }));
 
 app.post('/', express.json(), async (req, res) => {
 
@@ -22,10 +23,10 @@ app.post('/', express.json(), async (req, res) => {
         await page.goto(url, { timeout: 60000 });
         setTimeout(() => {
             console.log("Delayed for 2 second.");
-          }, 2000);
+        }, 2000);
         await page.evaluate(() => {
             window.scrollTo(0, document.body.scrollHeight);
-          });
+        });
         // Scroll and wait before scraping
         await page.evaluate(() => {
             window.scrollBy(0, window.innerHeight);
@@ -34,7 +35,7 @@ app.post('/', express.json(), async (req, res) => {
         const result = {};
 
         const idElement = await page.$('link[rel="canonical"]');
-        result.id = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
+        result.url = idElement ? await page.evaluate(el => el.href.split('?').pop(), idElement) : 'Element not found';
         const authorScriptElement = await page.$('script[type="application/ld+json"]');
         const authorScriptContent = authorScriptElement ? await page.evaluate(el => JSON.parse(el.textContent), authorScriptElement) : null;
         result.author = authorScriptContent ? authorScriptContent.author.name : 'Element not found';
