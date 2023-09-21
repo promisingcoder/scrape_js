@@ -79,6 +79,8 @@ const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(i
       } else{
         result.images = [...images1, ...images2];
       }
+     
+
 //images2 = arraysAreEqual(images1, images2) ? [] : images2;
 
 
