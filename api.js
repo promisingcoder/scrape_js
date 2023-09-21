@@ -69,9 +69,9 @@ app.post('/', express.json(), async (req, res) => {
             return text;
         });
 
-       \\ result.images = await page.$$eval('.feed-images-content img', imgs => {
+       /*   result.images = await page.$$eval('.feed-images-content img', imgs => {
         \\    return imgs.map(img => img.src)
-     \\   });
+     \\   }); */
       const images1 = await page.$$eval('ul[data-test-id="feed-images-content"] img', imgs => imgs.map(img => img.src));
 const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(img => img.src));
 
