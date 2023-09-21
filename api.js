@@ -74,7 +74,7 @@ app.post('/', express.json(), async (req, res) => {
         }); */
       const images1 = await page.$$eval('ul[data-test-id="feed-images-content"] img', imgs => imgs.map(img => img.src));
 const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(img => img.src));
-images2 = images1 == images2 ? [] : images2 
+images2 = arraysAreEqual(images1, images2) ? [] : images2;
 result.images = [...images1, ...images2];
 
         const reactionsElement = await page.$('span[data-test-id="social-actions__reaction-count"]');
