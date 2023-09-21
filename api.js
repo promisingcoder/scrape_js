@@ -69,9 +69,13 @@ app.post('/', express.json(), async (req, res) => {
             return text;
         });
 
-        result.images = await page.$$eval('.feed-images-content img', imgs => {
-            return imgs.map(img => img.src)
-        });
+       \\ result.images = await page.$$eval('.feed-images-content img', imgs => {
+        \\    return imgs.map(img => img.src)
+     \\   });
+      const images1 = await page.$$eval('ul[data-test-id="feed-images-content"] img', imgs => imgs.map(img => img.src));
+const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(img => img.src));
+
+result.images = [...images1, ...images2];
 
         const reactionsElement = await page.$('span[data-test-id="social-actions__reaction-count"]');
         const reactions = reactionsElement ? await page.evaluate(el => parseInt(el.textContent.trim(), 10), reactionsElement) : 'Element not found';
