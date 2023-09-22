@@ -25,7 +25,24 @@ app.use((req, res, next) => {
 
   next();
 });
+async function scrollUntilElement(page, selector){
+    await page.evaluate(async (selector) => {
+        await new Promise((resolve, reject) => {
+            var totalHeight = 0;
+            var distance = 100;
+            var timer = setInterval(() => {
+                var scrollHeight = document.body.scrollHeight;
+                window.scrollBy(0, distance);
+                totalHeight += distance;
 
+                if(document.querySelector(selector) || totalHeight >= scrollHeight){
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, 100);
+        });
+    }, selector);
+}
 app.post('/', express.json(), async (req, res) => {
 
     const { url, secretKey } = req.body;
@@ -44,9 +61,11 @@ app.post('/', express.json(), async (req, res) => {
         setTimeout(() => {
             console.log("Delayed for 2 second.");
           }, 2000);
-        await page.evaluate(() => {
+      /*  await page.evaluate(() => {
             window.scrollTo(0, document.body.scrollHeight);
-          });
+          }); */
+	 await scrollUntilElement(page, 'ul[data-test-id="feed-images-content"]');
+
         // Scroll and wait before scraping
         await page.evaluate(() => {
             window.scrollBy(0, window.innerHeight);
@@ -72,13 +91,12 @@ app.post('/', express.json(), async (req, res) => {
        /*   result.images = await page.$$eval('.feed-images-content img', imgs => {
             return imgs.map(img => img.src)
         }); */
+      
+
       const images1 = await page.$$eval('ul[data-test-id="feed-images-content"] img', imgs => imgs.map(img => img.src));
-const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(img => img.src));
-      if(images1 == images2){
-        results.images = [...images1]
-      } else{
-        result.images = [...images1, ...images2];
-      }
+      //const images2 = await page.$$eval('.feed-images-content img', imgs => imgs.map(img => img.src));
+      result.images = [...new Set(images1)];
+      
      
 
 //images2 = arraysAreEqual(images1, images2) ? [] : images2;
