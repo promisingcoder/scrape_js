@@ -35,7 +35,7 @@ app.post('/scrape', async (req, res) => {
   let browser, page;
   try {
     console.log('Launching browser...');
-    browser = await puppeteer.launch({ headless: false });
+    browser = await puppeteer.launch();
     console.log('Browser launched.');
 
     console.log('Opening new page...');
