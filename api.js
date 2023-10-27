@@ -21,7 +21,7 @@ async function checkLastPostForCompany(page, postSelector, companyName) {
 app.post('/scrape', async (req, res) => {
   const { secret_key, url, selectorsArray, attributesArray, namesArray, postSelector } = req.body;
   
-  if (secret_key !== 'test') {
+  if (secret_key !== 'hVT2aJmjT-lNHwQh12spPNR7Kz0umU9ZDaf95MFPC8g') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
