@@ -8,33 +8,50 @@ const port = 3001;
 app.use(express.json());
 
 async function checkLastPostForCompany(page, postSelector, companyName) {
-  const posts = await page.$$(postSelector);
-  const lastPost = posts[posts.length - 1];
-  const [textContent, allAttributes] = await lastPost.evaluate(el => {
-    const attributes = Array.from(el.attributes).map(attr => attr.value);
-    return [el.innerText, attributes];
-  });
+  console.log('Checking last post for company...');
+  try {
+    const posts = await page.$$(postSelector);
+    const lastPost = posts[posts.length - 1];
+    const [textContent, allAttributes] = await lastPost.evaluate(el => {
+      const attributes = Array.from(el.attributes).map(attr => attr.value);
+      return [el.innerText, attributes];
+    });
 
-  return textContent.includes(companyName) || allAttributes.some(attr => attr.includes(companyName));
+    return textContent.includes(companyName) || allAttributes.some(attr => attr.includes(companyName));
+  } catch (error) {
+    console.log('Error in checkLastPostForCompany:', error);
+    return false;
+  }
 }
 
 app.post('/scrape', async (req, res) => {
+  console.log('Received POST request...');
   const { secret_key, url, selectorsArray, attributesArray, namesArray, postSelector } = req.body;
-  
-  if (secret_key !== 'hVT2aJmjT-lNHwQh12spPNR7Kz0umU9ZDaf95MFPC8g') {
+
+  if (secret_key !== 'test') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  let browser, page;
   try {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+    console.log('Launching browser...');
+    browser = await puppeteer.launch({ headless: false });
+    console.log('Browser launched.');
+
+    console.log('Opening new page...');
+    page = await browser.newPage();
+    console.log('New page opened.');
+
+    console.log(`Navigating to URL: ${url}...`);
     await page.goto(url, { timeout: 60000 });
+    console.log(`Successfully navigated to URL: ${url}`);
 
     let results = [];
     let posts = [];
     let uniqueResults = new Set();
 
     while (true) {
+      console.log('Scrolling down...');
       await page.evaluate(() => window.scrollBy(0, window.innerHeight));
       await page.waitForTimeout(3000);
 
@@ -44,6 +61,7 @@ app.post('/scrape', async (req, res) => {
         scrollPosition: window.scrollY
       }));
 
+      console.log('Checking last post condition...');
       const condition = await checkLastPostForCompany(page, postSelector, "Alpine Laser");
 
       if (currentHeight <= viewportHeight + scrollPosition || !condition) {
@@ -53,6 +71,7 @@ app.post('/scrape', async (req, res) => {
     }
 
     for (const post of posts) {
+      console.log('Processing each post...');
       const itemData = await post.evaluate((selectors, attributes, names) => {
         const item = {};
         for (let i = 0; i < selectors.length; i++) {
@@ -76,7 +95,8 @@ app.post('/scrape', async (req, res) => {
     res.json({ results });
     
   } catch (error) {
-    console.error(error);
+    console.error('Error:', error);
+    if (browser) await browser.close();
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
