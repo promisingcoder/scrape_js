@@ -38,7 +38,7 @@ app.post('/scrape', async (req, res) => {
   }
 
   try {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(url, { timeout: 60000 });
 
