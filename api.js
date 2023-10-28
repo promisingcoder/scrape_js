@@ -6,97 +6,115 @@ const app = express();
 const port = 3001;
 
 app.use(express.json());
-
 async function checkLastPostForCompany(page, postSelector, companyName) {
-  console.log('Checking last post for company...');
-  try {
-    const posts = await page.$$(postSelector);
-    const lastPost = posts[posts.length - 1];
-    const [textContent, allAttributes] = await lastPost.evaluate(el => {
-      const attributes = Array.from(el.attributes).map(attr => attr.value);
-      return [el.innerText, attributes];
-    });
+  const posts = await page.$$(postSelector);
+  const lastPost = posts[posts.length - 1];
 
-    return textContent.includes(companyName) || allAttributes.some(attr => attr.includes(companyName));
-  } catch (error) {
-    console.log('Error in checkLastPostForCompany:', error);
-    return false;
+  const textContent = await lastPost.evaluate(el => el.innerText);
+  if (textContent.includes(companyName)) {
+    return true;
   }
+
+  const allAttributes = await lastPost.evaluate(el => {
+    const attributes = Array.from(el.attributes);
+    return attributes.map(attr => attr.value);
+  });
+
+  for (const attr of allAttributes) {
+    if (attr.includes(companyName)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 app.post('/scrape', async (req, res) => {
-  console.log('Received POST request...');
   const { secret_key, url, selectorsArray, attributesArray, namesArray, postSelector } = req.body;
+  
 
-  if (secret_key !== 'test') {
+  if (secret_key !== 'hVT2aJmjT-lNHwQh12spPNR7Kz0umU9ZDaf95MFPC8g') {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  let browser, page;
   try {
-    console.log('Launching browser...');
-    browser = await puppeteer.launch();
-    console.log('Browser launched.');
-
-    console.log('Opening new page...');
-    page = await browser.newPage();
-    console.log('New page opened.');
-
-    console.log(`Navigating to URL: ${url}...`);
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
     await page.goto(url, { timeout: 60000 });
-    console.log(`Successfully navigated to URL: ${url}`);
 
     let results = [];
     let posts = [];
-    let uniqueResults = new Set();
-
     while (true) {
-      console.log('Scrolling down...');
-      await page.evaluate(() => window.scrollBy(0, window.innerHeight));
-      await page.waitForTimeout(3000);
+      await page.evaluate(() => {
+        window.scrollBy(0, window.innerHeight);
+      });
 
-      const { currentHeight, viewportHeight, scrollPosition } = await page.evaluate(() => ({
-        currentHeight: document.body.scrollHeight,
-        viewportHeight: window.innerHeight,
-        scrollPosition: window.scrollY
-      }));
-
-      console.log('Checking last post condition...');
-      const condition = await checkLastPostForCompany(page, postSelector, "Alpine Laser");
-
-      if (currentHeight <= viewportHeight + scrollPosition || !condition) {
-        posts = await page.$$(postSelector);
+      try {
+        await page.waitForTimeout(3000);
+      } catch (error) {
         break;
       }
+
+      let currentHeight = await page.evaluate('document.body.scrollHeight');
+      let viewportHeight = await page.evaluate('window.innerHeight');
+      let scrollPosition = await page.evaluate('window.scrollY');
+      condition = await checkLastPostForCompany(page,postSelector,"Alpine Laser")
+    
+      if (currentHeight <= viewportHeight + scrollPosition || condition == false) {
+        console.log(condition)
+        posts = await page.$$(postSelector);
+        console.log(`Found ${posts.length} posts.`);
+        break;
+      }
+      
+      
+
     }
 
     for (const post of posts) {
-      console.log('Processing each post...');
-      const itemData = await post.evaluate((selectors, attributes, names) => {
-        const item = {};
-        for (let i = 0; i < selectors.length; i++) {
-          const elements = Array.from(document.querySelectorAll(selectors[i]));
-          const values = elements.map(el => attributes[i] === 'innerText' ? el.innerText : el.getAttribute(attributes[i])).filter(value => value && value.trim() !== '');
-          if (values.length > 0) {
-            item[names[i]] = values;
-          }
-        }
-        return item;
-      }, selectorsArray, attributesArray, namesArray);
+      const itemData = {};
 
-      const itemString = JSON.stringify(itemData);
-      if (Object.keys(itemData).length > 0 && !uniqueResults.has(itemString)) {
+      for (let i = 0; i < selectorsArray.length; i++) {
+        const selector = selectorsArray[i];
+        const attribute = attributesArray[i];
+        const name = namesArray[i];
+
+        try {
+          const elements = await post.$$(selector);
+          let values = [];
+
+          for (let element of elements) {
+            let value;
+
+            if (attribute === 'innerText') {
+              value = await element.evaluate(el => el.innerText);
+            } else {
+              value = await element.evaluate((el, attr) => el.getAttribute(attr), attribute);
+            }
+
+            if (value && value.trim() !== '') {
+              values.push(value);
+            }
+          }
+
+          if (values.length > 0) {
+            itemData[name] = values;
+          }
+        } catch (error) {
+          console.error(`Error retrieving data for selector "${selector}": ${error.message}`);
+        }
+      }
+
+      if (Object.keys(itemData).length > 0 && !results.some(result => JSON.stringify(result) === JSON.stringify(itemData))) {
         results.push(itemData);
-        uniqueResults.add(itemString);
       }
     }
 
     await browser.close();
     res.json({ results });
-    
+
   } catch (error) {
-    console.error('Error:', error);
-    if (browser) await browser.close();
+    console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
